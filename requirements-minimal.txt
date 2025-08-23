@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+transformers
+torch
+scikit-learn
+spacy
+pandas
+numpy
+datasets
+rich
+environs
+python-dotenv
