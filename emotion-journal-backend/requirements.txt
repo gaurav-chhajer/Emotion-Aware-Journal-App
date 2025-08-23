@@ -2,5 +2,6 @@ fastapi
 uvicorn[standard]
 torch
 transformers
-spacy[transformers]
+spacy
+# This next line is crucial: it installs the spacy model during the build
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
