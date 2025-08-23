@@ -65,7 +65,12 @@ app = FastAPI(
 )
 
 # --- CORS ---
-origins = ["http://localhost:3000", "http://localhost"]
+# This will allow your Vercel app in production and localhost for development
+origins = [
+    os.environ.get("FRONTEND_URL", "http://localhost:3000"),
+    "http://localhost"
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
