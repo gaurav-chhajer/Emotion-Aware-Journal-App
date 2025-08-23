@@ -1,0 +1,2 @@
+# Emotion-Aware-Journal-App
+The Emotion-Aware Journal App is an AI-powered journaling platform that helps users reflect on their thoughts and emotions. By combining NLP models (HuggingFace Transformers, spaCy) with a FastAPI backend and a modern Node.js frontend, the app automatically analyzes journal entries, detects underlying emotions, and provides meaningful insights into emotional patterns over time.  It’s designed to support self-awareness, emotional well-being, and personal growth, offering users a safe digital space to track and understand their feelings.
