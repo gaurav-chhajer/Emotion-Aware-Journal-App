@@ -19,22 +19,13 @@ import os
 # --- Model Loading ---
 @lru_cache(maxsize=None)
 def get_emotion_model():
-    """
-    Loads the emotion classification model.
-    It will prioritize the local fine-tuned model if it exists.
-    """
-    fine_tuned_path = "./fine-tuned-emotion-model"
-    
-    if os.path.exists(fine_tuned_path):
-        print("Loading local fine-tuned emotion model...")
-        model_name = fine_tuned_path
-    else:
-        print("Fine-tuned model not found. Loading pre-trained base model...")
-        model_name = "j-hartmann/emotion-english-distilroberta-base"
-
+    """Loads the emotion classification model directly from HuggingFace."""
+    print("Loading emotion model from HuggingFace Hub...")
+    # This model is a good general-purpose choice.
+    model_name = "j-hartmann/emotion-english-distilroberta-base"
     device = 0 if torch.cuda.is_available() else -1
     classifier = pipeline("text-classification", model=model_name, framework="pt", device=device)
-    print(f"Emotion model loaded from '{model_name}' on device {device}.")
+    print(f"Emotion model '{model_name}' loaded.")
     return classifier
 
 @lru_cache(maxsize=None)
