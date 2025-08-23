@@ -9,13 +9,15 @@
       name="description"
       content="Emotion-Aware Journal App created with React"
     />
-    
-    <!-- This script loads Tailwind CSS -->
+    <!-- Tailwind (CDN for simplicity) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <title>Emotion Journal</title>
+
+    <!-- (Optional) Direct override for API base at runtime if you’re not rebuilding:
+         <script>window.API_BASE = "https://your-fastapi.onrender.com";</script>
+    -->
   </head>
-  <body>
+  <body class="bg-gray-100">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
