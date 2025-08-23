@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
-import { createRoot } from "react-dom/client";
 import { initializeApp } from "firebase/app";
+// *UPDATED*: Added GoogleAuthProvider and signInWithPopup
 import {
   getAuth,
   onAuthStateChanged,
@@ -58,27 +58,8 @@ import {
   Loader,
 } from "lucide-react";
 
-/* ============================
-   API base helper (prevents 405s)
-   ============================ */
-function getApiBase() {
-  const raw =
-    process.env.REACT_APP_API_URL ||
-    (typeof window !== "undefined" ? window.API_BASE : "") ||
-    "";
-  const base = raw.replace(/\/+$/, ""); // strip trailing slashes
-  if (!base) {
-    // Throw early, so UI shows a clear message instead of hitting the static host
-    throw new Error(
-      "REACT_APP_API_URL is not set. Configure it to your FastAPI URL (e.g., https://your-service.onrender.com)"
-    );
-  }
-  return base;
-}
-
-/* ============================
-   Firebase Configuration
-   ============================ */
+// --- Firebase Configuration ---
+// In your firebase configuration file
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -89,68 +70,68 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
+// --- Firebase Initialization ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ============================
-   Auth Context
-   ============================ */
+// --- Authentication Context ---
 const AuthContext = createContext();
-const useAuth = () => useContext(AuthContext);
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       setLoading(false);
     });
-    return () => unsub();
+    return () => unsubscribe();
   }, []);
+
+  const value = { user, loading };
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );
 };
 
-/* ============================
-   App Switch
-   ============================ */
+const useAuth = () => {
+  return useContext(AuthContext);
+};
+
+// --- Main App Component ---
 function App() {
   const { user } = useAuth();
   return user ? <JournalApp /> : <AuthScreen />;
 }
 
-/* ============================
-   Google Icon
-   ============================ */
+// --- Google Icon SVG ---
 const GoogleIcon = () => (
-  <svg className="w-5 h-5 mr-3" viewBox="0 0 48 48" aria-hidden="true">
+  <svg className="w-5 h-5 mr-3" viewBox="0 0 48 48">
     <path
       fill="#FFC107"
       d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-    />
+    ></path>
     <path
       fill="#FF3D00"
       d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-    />
+    ></path>
     <path
       fill="#4CAF50"
       d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-    />
+    ></path>
     <path
       fill="#1976D2"
       d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.99,36.586,44,31.023,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-    />
+    ></path>
   </svg>
 );
 
-/* ============================
-   Auth Screen
-   ============================ */
+// --- Authentication Screen ---
 const AuthScreen = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -169,12 +150,13 @@ const AuthScreen = () => {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
-      setError(err.message || "Authentication failed");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // *NEW*: Function to handle Google Sign-In
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
@@ -182,7 +164,7 @@ const AuthScreen = () => {
     try {
       await signInWithPopup(auth, provider);
     } catch (err) {
-      setError(err.message || "Google sign-in failed");
+      setError(err.message);
       setLoading(false);
     }
   };
@@ -197,6 +179,7 @@ const AuthScreen = () => {
           </p>
         </div>
 
+        {/* *NEW*: Google Sign-In Button */}
         <button
           onClick={handleGoogleSignIn}
           disabled={loading}
@@ -206,6 +189,7 @@ const AuthScreen = () => {
           Sign in with Google
         </button>
 
+        {/* *NEW*: Separator */}
         <div className="flex items-center">
           <div className="flex-grow bg-gray-200 h-px"></div>
           <span className="mx-4 text-sm text-gray-400">OR</span>
@@ -255,9 +239,7 @@ const AuthScreen = () => {
   );
 };
 
-/* ============================
-   Journal App
-   ============================ */
+// --- Journal Application ---
 const JournalApp = () => {
   const [entries, setEntries] = useState([]);
   const [currentEntry, setCurrentEntry] = useState("");
@@ -267,43 +249,42 @@ const JournalApp = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, "journals"), where("userId", "==", user.uid));
-    const unsub = onSnapshot(q, (qs) => {
-      const data = [];
-      qs.forEach((d) => data.push({ id: d.id, ...d.data() }));
-      data.sort((a, b) => b.timestamp?.toDate() - a.timestamp?.toDate());
-      setEntries(data);
-    });
-    return () => unsub();
+    if (user) {
+      const q = query(
+        collection(db, "journals"),
+        where("userId", "==", user.uid)
+      );
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const entriesData = [];
+        querySnapshot.forEach((doc) => {
+          entriesData.push({ id: doc.id, ...doc.data() });
+        });
+        entriesData.sort(
+          (a, b) => b.timestamp?.toDate() - a.timestamp?.toDate()
+        );
+        setEntries(entriesData);
+      });
+      return () => unsubscribe();
+    }
   }, [user]);
 
   const analyzeAndSaveEntry = async () => {
     if (currentEntry.trim() === "" || isSaving) return;
     setIsSaving(true);
+
     try {
-      const API_BASE = getApiBase(); // throws if not set
-      const url = ${API_BASE}/analyze; // sanitized (no double slash)
-      const res = await fetch(url, {
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await fetch(${apiUrl}/analyze, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: currentEntry }),
       });
 
-      if (!res.ok) {
-        const bodyText = await res.text().catch(() => "");
-        console.error("Analyze failed", {
-          url,
-          status: res.status,
-          statusText: res.statusText,
-          bodyText,
-        });
-        throw new Error(
-          Analysis API failed (${res.status} ${res.statusText}). See console for details.
-        );
+      if (!response.ok) {
+        throw new Error("Analysis API call failed");
       }
 
-      const analysis = await res.json();
+      const analysis = await response.json();
 
       const newEntryData = {
         userId: user.uid,
@@ -314,8 +295,8 @@ const JournalApp = () => {
       };
 
       if (editingEntry) {
-        const ref = doc(db, "journals", editingEntry.id);
-        await updateDoc(ref, {
+        const entryRef = doc(db, "journals", editingEntry.id);
+        await updateDoc(entryRef, {
           text: currentEntry,
           emotion: analysis.emotion,
           keywords: analysis.keywords,
@@ -325,9 +306,9 @@ const JournalApp = () => {
         await addDoc(collection(db, "journals"), newEntryData);
       }
       setCurrentEntry("");
-    } catch (err) {
-      console.error("Error saving entry:", err);
-      alert(err.message || "Sorry, there was an error saving your entry.");
+    } catch (error) {
+      console.error("Error saving entry:", error);
+      alert("Sorry, there was an error saving your entry. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -350,7 +331,7 @@ const JournalApp = () => {
   };
 
   return (
-    <div className="min-h-screen font-sans text-gray-800">
+    <div className="bg-gray-100 min-h-screen font-sans text-gray-800">
       <Navbar
         onToggleDashboard={() => setShowDashboard(!showDashboard)}
         showDashboard={showDashboard}
@@ -382,12 +363,12 @@ const JournalApp = () => {
   );
 };
 
-/* ============================
-   UI Components
-   ============================ */
+// --- Components ---
+
 const Navbar = ({ onToggleDashboard, showDashboard }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
@@ -411,7 +392,7 @@ const Navbar = ({ onToggleDashboard, showDashboard }) => {
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
                   <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                    {user?.email}
+                    {user.email}
                   </div>
                   <button
                     onClick={() => signOut(auth)}
@@ -437,76 +418,85 @@ const JournalEditor = ({
   isEditing,
   onCancelEdit,
   isSaving,
-}) => (
-  <div className="bg-white p-6 rounded-2xl shadow-lg mb-8">
-    <h2 className="text-xl font-semibold mb-4">
-      {isEditing ? "Edit Your Entry" : "How are you feeling today?"}
-    </h2>
-    <textarea
-      value={currentEntry}
-      onChange={(e) => setCurrentEntry(e.target.value)}
-      placeholder="Write about your day, your thoughts, your feelings..."
-      className="w-full h-40 p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-      disabled={isSaving}
-    />
-    <div className="flex justify-end items-center mt-4 space-x-3">
-      {isEditing && (
+}) => {
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow-lg mb-8">
+      <h2 className="text-xl font-semibold mb-4">
+        {isEditing ? "Edit Your Entry" : "How are you feeling today?"}
+      </h2>
+      <textarea
+        value={currentEntry}
+        onChange={(e) => setCurrentEntry(e.target.value)}
+        placeholder="Write about your day, your thoughts, your feelings..."
+        className="w-full h-40 p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        disabled={isSaving}
+      ></textarea>
+      <div className="flex justify-end items-center mt-4 space-x-3">
+        {isEditing && (
+          <button
+            onClick={onCancelEdit}
+            className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+            disabled={isSaving}
+          >
+            Cancel
+          </button>
+        )}
         <button
-          onClick={onCancelEdit}
-          className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+          onClick={onSave}
+          className="flex items-center justify-center px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition disabled:bg-blue-400"
           disabled={isSaving}
         >
-          Cancel
+          {isSaving ? (
+            <Loader className="animate-spin w-4 h-4 mr-2" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          {isSaving
+            ? "Analyzing..."
+            : isEditing
+            ? "Update Entry"
+            : "Save Entry"}
         </button>
-      )}
-      <button
-        onClick={onSave}
-        className="flex items-center justify-center px-6 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition disabled:bg-blue-400"
-        disabled={isSaving}
-      >
-        {isSaving ? (
-          <Loader className="animate-spin w-4 h-4 mr-2" />
-        ) : (
-          <Save className="w-4 h-4 mr-2" />
-        )}
-        {isSaving ? "Analyzing..." : isEditing ? "Update Entry" : "Save Entry"}
-      </button>
-    </div>
-  </div>
-);
-
-const JournalFeed = ({ entries, onEdit, onDelete }) => (
-  <div className="space-y-6">
-    <h2 className="text-2xl font-bold">Past Entries</h2>
-    {entries.length > 0 ? (
-      entries.map((entry) => (
-        <JournalEntryCard
-          key={entry.id}
-          entry={entry}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      ))
-    ) : (
-      <div className="text-center py-10 bg-white rounded-2xl shadow-md">
-        <p className="text-gray-500">You have no entries yet.</p>
-        <p className="text-gray-400 text-sm mt-1">
-          Write one above to get started!
-        </p>
       </div>
-    )}
-  </div>
-);
+    </div>
+  );
+};
+
+const JournalFeed = ({ entries, onEdit, onDelete }) => {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Past Entries</h2>
+      {entries.length > 0 ? (
+        entries.map((entry) => (
+          <JournalEntryCard
+            key={entry.id}
+            entry={entry}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))
+      ) : (
+        <div className="text-center py-10 bg-white rounded-2xl shadow-md">
+          <p className="text-gray-500">You have no entries yet.</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Write one above to get started!
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const EmotionIcon = ({ emotion, size = "w-8 h-8" }) => {
-  const icon = {
+  const emotionMap = {
     Joy: <Smile className={text-yellow-500 ${size}} />,
     Sadness: <Frown className={text-blue-500 ${size}} />,
     Anger: <Angry className={text-red-500 ${size}} />,
     Love: <Heart className={text-pink-500 ${size}} />,
     Neutral: <Meh className={text-gray-500 ${size}} />,
-  }[emotion];
-  return icon || <Meh className={text-gray-400 ${size}} />;
+    default: <Meh className={text-gray-400 ${size}} />,
+  };
+  return emotionMap[emotion] || emotionMap.default;
 };
 
 const JournalEntryCard = ({ entry, onEdit, onDelete }) => {
@@ -524,11 +514,13 @@ const JournalEntryCard = ({ entry, onEdit, onDelete }) => {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg">
       <div className="flex justify-between items-start">
-        <div className="flex items-center space-x-3">
-          <EmotionIcon emotion={entry.emotion} />
-          <div>
-            <p className="font-bold text-lg">{entry.emotion}</p>
-            <p className="text-sm text-gray-500">{formattedDate}</p>
+        <div>
+          <div className="flex items-center space-x-3">
+            <EmotionIcon emotion={entry.emotion} />
+            <div>
+              <p className="font-bold text-lg">{entry.emotion}</p>
+              <p className="text-sm text-gray-500">{formattedDate}</p>
+            </div>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -579,9 +571,7 @@ const JournalEntryCard = ({ entry, onEdit, onDelete }) => {
   );
 };
 
-/* ============================
-   Dashboard
-   ============================ */
+// --- Dashboard & Charts ---
 const Dashboard = ({ entries }) => {
   if (entries.length === 0) {
     return (
@@ -594,14 +584,17 @@ const Dashboard = ({ entries }) => {
     );
   }
 
-  const emotionCounts = entries.reduce((acc, e) => {
-    acc[e.emotion] = (acc[e.emotion] || 0) + 1;
+  // Process data for charts
+  const emotionCounts = entries.reduce((acc, entry) => {
+    acc[entry.emotion] = (acc[entry.emotion] || 0) + 1;
     return acc;
   }, {});
-  const emotionData = Object.keys(emotionCounts).map((k) => ({
-    name: k,
-    value: emotionCounts[k],
+
+  const emotionData = Object.keys(emotionCounts).map((key) => ({
+    name: key,
+    value: emotionCounts[key],
   }));
+
   const COLORS = {
     Joy: "#FFBB28",
     Sadness: "#0088FE",
@@ -610,12 +603,16 @@ const Dashboard = ({ entries }) => {
     Neutral: "#A0AEC0",
   };
 
-  const entriesByDay = entries.reduce((acc, e) => {
-    if (!e.timestamp) return acc;
-    const day = new Date(e.timestamp.toDate()).toLocaleDateString("en-CA");
-    acc[day] = (acc[day] || 0) + 1;
+  const entriesByDay = entries.reduce((acc, entry) => {
+    if (!entry.timestamp) return acc;
+    const day = new Date(entry.timestamp.toDate()).toLocaleDateString("en-CA"); // YYYY-MM-DD
+    if (!acc[day]) {
+      acc[day] = 0;
+    }
+    acc[day]++;
     return acc;
   }, {});
+
   const activityData = Object.keys(entriesByDay)
     .sort()
     .map((day) => ({
@@ -626,16 +623,20 @@ const Dashboard = ({ entries }) => {
       entries: entriesByDay[day],
     }));
 
-  const allKeywords = entries.flatMap((e) => e.keywords || []);
+  const allKeywords = entries.flatMap((entry) => entry.keywords || []);
   const keywordCounts = allKeywords.reduce((acc, kw) => {
     acc[kw] = (acc[kw] || 0) + 1;
     return acc;
   }, {});
-  const maxVal = Math.max(...Object.values(keywordCounts));
+
   const radarData = Object.entries(keywordCounts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 6)
-    .map(([subject, A]) => ({ subject, A, fullMark: maxVal }));
+    .map(([subject, A]) => ({
+      subject,
+      A,
+      fullMark: Math.max(...Object.values(keywordCounts)),
+    }));
 
   return (
     <div className="space-y-8">
@@ -700,9 +701,7 @@ const Dashboard = ({ entries }) => {
   );
 };
 
-/* ============================
-   Root Mount
-   ============================ */
+// The root component needs to be wrapped in the AuthProvider
 const Root = () => (
   <AuthProvider>
     <App />
@@ -710,9 +709,3 @@ const Root = () => (
 );
 
 export default Root;
-
-// If you want this file to also mount itself (single-file demo), uncomment:
-/*
-const container = document.getElementById("root");
-createRoot(container).render(<Root />);
-*/
