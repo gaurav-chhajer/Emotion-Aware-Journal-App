@@ -1,7 +1,14 @@
 fastapi
-uvicorn[standard]
-torch
+uvicorn
 transformers
+torch
+scikit-learn
 spacy
+pandas
+numpy
+datasets
+rich
+environs
+python-dotenv
 # This next line is crucial: it installs the spacy model during the build
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
