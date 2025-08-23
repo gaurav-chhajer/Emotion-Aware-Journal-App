@@ -67,8 +67,9 @@ app = FastAPI(
 # --- CORS ---
 # This will allow your Vercel app in production and localhost for development
 origins = [
-    os.environ.get("FRONTEND_URL", "http://localhost:3000"),
-    "http://localhost"
+    "https://emotion-aware-journal-app.vercel.app",
+    "http://localhost:3000",
+    "http://localhost",
 ]
 
 app.add_middleware(
