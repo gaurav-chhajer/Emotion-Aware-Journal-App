@@ -9,7 +9,7 @@ services:
     # The environment to use
     env: python
     # Explicitly set the Python version to a stable one
-    pythonVersion: "3.11"
+    pythonVersion: 3.11
     # The directory where your backend code is located
     rootDir: ./emotion-journal-backend
     # The command to install dependencies
