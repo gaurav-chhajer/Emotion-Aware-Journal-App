@@ -31,7 +31,7 @@ class AnalysisResult(BaseModel):
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Emotion Journal API!"}
+    return {"message": "DEPLOYMENT SUCCESSFUL - V3"}
 
 @app.post("/analyze", response_model=AnalysisResult)
 async def analyze_entry(journal_text: JournalText):
