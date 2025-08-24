@@ -1,0 +1,21 @@
+# render.yaml
+# This file tells Render exactly how to build and deploy your service.
+
+services:
+  # A name for your service
+  - name: emotion-api-backend
+    # The type of service
+    type: web
+    # The environment to use
+    env: python
+    # Explicitly set the Python version to a stable one
+    pythonVersion: "3.11"
+    # The directory where your backend code is located
+    rootDir: ./emotion-journal-backend
+    # The command to install dependencies
+    buildCommand: "pip install -r requirements.txt"
+    # The command to start your server
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    # Specify the free instance type
+    plan: free
+

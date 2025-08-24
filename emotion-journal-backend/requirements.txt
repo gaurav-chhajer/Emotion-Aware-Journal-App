@@ -1,11 +1,7 @@
-datasets==4.0.0
-fastapi==0.116.1
-numpy==1.24.3
-pandas==2.3.2
-pydantic==2.11.7
-scikit_learn==1.7.1
-spacy==3.8.7
-torch==2.8.0+cu126
-torch==2.8.0
-torch==2.7.1
-transformers==4.55.0
+fastapi
+uvicorn[standard]
+torch
+transformers
+spacy[transformers]
+# This next line is crucial: it installs the spacy model during the build
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
