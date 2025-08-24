@@ -248,7 +248,7 @@ const JournalApp = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
+  useEffect(() => { 
     if (user) {
       const q = query(
         collection(db, "journals"),
@@ -273,7 +273,7 @@ const JournalApp = () => {
     setIsSaving(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL;
+      const apiUrl = process.env.REACT_APP_API_URL; 
       const response = await fetch(${apiUrl}/analyze, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -489,12 +489,12 @@ const JournalFeed = ({ entries, onEdit, onDelete }) => {
 
 const EmotionIcon = ({ emotion, size = "w-8 h-8" }) => {
   const emotionMap = {
-    Joy: <Smile className={text-yellow-500 ${size}} />,
-    Sadness: <Frown className={text-blue-500 ${size}} />,
-    Anger: <Angry className={text-red-500 ${size}} />,
-    Love: <Heart className={text-pink-500 ${size}} />,
-    Neutral: <Meh className={text-gray-500 ${size}} />,
-    default: <Meh className={text-gray-400 ${size}} />,
+    Joy: <Smile className={`text-yellow-500 ${size}`} />,
+    Sadness: <Frown className={`text-blue-500 ${size}`} />,
+    Anger: <Angry className={`text-red-500 ${size}`} />,
+    Love: <Heart className={`text-pink-500 ${size}`} />,
+    Neutral: <Meh className={`text-gray-500 ${size}`} />,
+    default: <Meh className={`text-gray-400 ${size}`} />,
   };
   return emotionMap[emotion] || emotionMap.default;
 };
@@ -655,7 +655,7 @@ const Dashboard = ({ entries }) => {
                 label
               >
                 {emotionData.map((entry, index) => (
-                  <Cell
+                  <Cell 
                     key={cell-${index}}
                     fill={COLORS[entry.name] || "#8884d8"}
                   />
