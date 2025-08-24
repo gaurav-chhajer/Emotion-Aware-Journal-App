@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { initializeApp } from "firebase/app";
-// *UPDATED*: Added GoogleAuthProvider and signInWithPopup
+// **UPDATED**: Added GoogleAuthProvider and signInWithPopup
 import {
   getAuth,
   onAuthStateChanged,
@@ -156,7 +156,7 @@ const AuthScreen = () => {
     }
   };
 
-  // *NEW*: Function to handle Google Sign-In
+  // **NEW**: Function to handle Google Sign-In
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
@@ -179,7 +179,7 @@ const AuthScreen = () => {
           </p>
         </div>
 
-        {/* *NEW*: Google Sign-In Button */}
+        {/* **NEW**: Google Sign-In Button */}
         <button
           onClick={handleGoogleSignIn}
           disabled={loading}
@@ -189,7 +189,7 @@ const AuthScreen = () => {
           Sign in with Google
         </button>
 
-        {/* *NEW*: Separator */}
+        {/* **NEW**: Separator */}
         <div className="flex items-center">
           <div className="flex-grow bg-gray-200 h-px"></div>
           <span className="mx-4 text-sm text-gray-400">OR</span>
@@ -248,7 +248,7 @@ const JournalApp = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => { 
+  useEffect(() => {
     if (user) {
       const q = query(
         collection(db, "journals"),
@@ -273,8 +273,9 @@ const JournalApp = () => {
     setIsSaving(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL; 
-      const response = await fetch(${apiUrl}/analyze, {
+      const apiUrl = process.env.REACT_APP_API_URL;
+      // **FIXED**: Added backticks for template literal
+      const response = await fetch(`${apiUrl}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: currentEntry }),
@@ -488,6 +489,7 @@ const JournalFeed = ({ entries, onEdit, onDelete }) => {
 };
 
 const EmotionIcon = ({ emotion, size = "w-8 h-8" }) => {
+  // **FIXED**: Added backticks for className template literals
   const emotionMap = {
     Joy: <Smile className={`text-yellow-500 ${size}`} />,
     Sadness: <Frown className={`text-blue-500 ${size}`} />,
@@ -655,8 +657,9 @@ const Dashboard = ({ entries }) => {
                 label
               >
                 {emotionData.map((entry, index) => (
-                  <Cell 
-                    key={cell-${index}}
+                  <Cell
+                    // **FIXED**: Added backticks for template literal
+                    key={`cell-${index}`}
                     fill={COLORS[entry.name] || "#8884d8"}
                   />
                 ))}
