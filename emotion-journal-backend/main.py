@@ -1,9 +1,6 @@
 # main.py
-# This version uses a local, two-step pipeline for advanced emotion analysis without any external APIs.
-# To run this:
-# 1. Make sure you have your fine-tuned model folder ('./fine-tuned-emotion-model').
-# 2. Ensure all local libraries are installed (transformers, spacy, torch, etc.).
-# 3. Run the server: uvicorn main:app --reload
+# This is a simplified version to ensure it runs on Render's free tier.
+# It only loads one model to save memory.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,54 +11,29 @@ from functools import lru_cache
 import spacy
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-import os
 
 # --- Model Loading ---
 @lru_cache(maxsize=None)
 def get_emotion_model():
-    """Loads the emotion classification model directly from HuggingFace."""
-    print("Loading emotion model from HuggingFace Hub...")
-    # This model is a good general-purpose choice.
+    """Loads the emotion classification model from HuggingFace."""
+    print("Loading emotion model...")
     model_name = "j-hartmann/emotion-english-distilroberta-base"
-    device = 0 if torch.cuda.is_available() else -1
+    device = -1 # Use CPU to save memory on Render's free tier
     classifier = pipeline("text-classification", model=model_name, framework="pt", device=device)
     print(f"Emotion model '{model_name}' loaded.")
     return classifier
 
-@lru_cache(maxsize=None)
-def get_sarcasm_model():
-    """Loads and caches the sarcasm detection model."""
-    print("Loading sarcasm detection model...")
-    model_name = "helinivan/english-sarcasm-detector"
-    sarcasm_detector = pipeline("text-classification", model=model_name, framework="pt", device=0 if torch.cuda.is_available() else -1)
-    print("Sarcasm model loaded.")
-    return sarcasm_detector
-
-@lru_cache(maxsize=None)
-def get_ner_model():
-    """Loads and caches the Named Entity Recognition (NER) model."""
-    print("Loading NER model...")
-    nlp = spacy.load("en_core_web_sm")
-    print("NER model loaded.")
-    return nlp
-
-# A thread pool executor to run our synchronous AI models in a separate thread
+# A thread pool to run the model without blocking the server
 executor = ThreadPoolExecutor()
 
 # --- FastAPI App Initialization ---
-app = FastAPI(
-    title="Local-Only Emotion Journal API",
-    description="API with a local two-step pipeline for improved analysis.",
-    version="2.3.0",
-)
+app = FastAPI(title="Emotion Journal API")
 
-# --- CORS ---
-# This will allow your Vercel app in production and localhost for development
-origins = ["*"]
-
+# --- CORS Middleware ---
+# Allows your Vercel frontend to communicate with this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"], # Allow all origins for simplicity
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,55 +43,35 @@ app.add_middleware(
 class JournalText(BaseModel):
     text: str
 
-class NamedEntity(BaseModel):
-    text: str
-    label: str
-
 class AnalysisResult(BaseModel):
     emotion: str
-    keywords: list[str]
-    entities: list[NamedEntity]
+    keywords: list[str] # Keeping keywords for compatibility with frontend
 
 # --- Analysis Logic ---
 def perform_analysis_sync(text: str) -> dict:
-    """
-    Synchronous function that runs the local AI models.
-    """
-    # Step 1: Check for sarcasm with the local sarcasm model
-    sarcasm_detector = get_sarcasm_model()
-    sarcasm_result = sarcasm_detector(text)[0]
+    """Synchronous function that runs the AI model."""
+    emotion_classifier = get_emotion_model()
+    predictions = emotion_classifier(text)
+    raw_emotion = predictions[0]['label']
     
-    emotion = ""
-    # Use a threshold to decide if the sarcasm is strong enough to override
-    if sarcasm_result['label'].upper() == 'SARCASM' and sarcasm_result['score'] > 0.6:
-        print(f"Sarcasm detected with score {sarcasm_result['score']}! Overriding emotion.")
-        emotion = "Anger" # Sarcasm is often a form of anger/frustration
-    else:
-        # Step 2: If not sarcastic, use the fine-tuned emotion model
-        emotion_classifier = get_emotion_model()
-        emotion_predictions = emotion_classifier(text)
-        raw_emotion = emotion_predictions[0]['label']
-        emotion_map = {'joy': 'Joy', 'sadness': 'Sadness', 'anger': 'Anger', 'love': 'Love', 'neutral': 'Neutral', 'fear': 'Fear', 'surprise': 'Surprise', 'disgust': 'Disgust'}
-        emotion = emotion_map.get(raw_emotion, raw_emotion.capitalize())
+    emotion_map = {
+        'joy': 'Joy', 'sadness': 'Sadness', 'anger': 'Anger', 
+        'love': 'Love', 'neutral': 'Neutral', 'fear': 'Fear', 
+        'surprise': 'Surprise', 'disgust': 'Disgust'
+    }
+    emotion = emotion_map.get(raw_emotion, raw_emotion.capitalize())
 
-    # NER and Keyword extraction are also local
-    ner_model = get_ner_model()
-    doc = ner_model(text)
-    entities = [{"text": ent.text, "label": ent.label_} for ent in doc.ents]
-    stop_words = spacy.lang.en.stop_words.STOP_WORDS
-    keywords = [token.lemma_.lower() for token in doc if not token.is_stop and not token.is_punct and not token.is_alpha]
-    unique_keywords = list(set(keywords))
-
-    return {"emotion": emotion, "keywords": unique_keywords[:10], "entities": entities}
+    # Return dummy keywords since we removed the NER model to save memory
+    return {"emotion": emotion, "keywords": ["analysis", "text"]}
 
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Local-Only Emotion Journal API!"}
+    return {"message": "Welcome to the Emotion Journal API!"}
 
 @app.post("/analyze", response_model=AnalysisResult)
 async def analyze_entry(journal_text: JournalText):
-    """Receives journal text and returns an asynchronous, multi-faceted analysis."""
+    """Receives journal text and returns an analysis."""
     loop = asyncio.get_running_loop()
     analysis = await loop.run_in_executor(
         executor, perform_analysis_sync, journal_text.text
@@ -127,5 +79,4 @@ async def analyze_entry(journal_text: JournalText):
     return AnalysisResult(
         emotion=analysis["emotion"],
         keywords=analysis["keywords"],
-        entities=analysis["entities"]
     )
