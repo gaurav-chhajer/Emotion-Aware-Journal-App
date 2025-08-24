@@ -1,5 +1,5 @@
 # main.py
-# This contains the original code with 3 different models loading 
+# This contains the original code with 3 different models loading but the free tier is not able to load them in render so there are dummy responses
 
 # This version uses a local, two-step pipeline for advanced emotion analysis without any external APIs.
 # To run this:
